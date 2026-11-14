@@ -2,11 +2,11 @@
 #   Windows : npx electron-builder --win nsis zip
 #   Linux   : npx electron-builder --linux AppImage tar.gz   (AppImage needs a Linux host or CI — see build/linux/build-on-linux.md)
 #   macOS   : npx electron-builder --mac dmg zip               (macOS host / CI only)
-# appId, executable names and desktopName keep the old name Xenith: 0.2.x installs update in place, and Steam
-# shortcuts and X-Haptics game profiles that point at Xenith.exe keep working.
+# appId, the Linux executable and desktopName keep the old name Xenith so older installs update in place.
+# The Windows program file is Jadebox.exe: Steam shortcuts and X-Haptics profiles made for Xenith.exe must be re-added.
 appId: io.github.xenith.app
 productName: Jadebox
-executableName: Xenith
+executableName: Jadebox
 copyright: Copyright © 2026 Jadebox contributors (MIT)
 directories:
   output: release
