@@ -213,7 +213,7 @@ html[data-streaming='true'] .app-ui { visibility: hidden; }
 .dtabs__account { margin-left: auto; height: 44px; padding: 0 12px; border: 0; border-radius: 12px; background: transparent; color: var(--text-2); }
 
 /* ───────── page ───────── */
-.page { min-height: 100%; max-width: 1344px; padding: 40px 64px 32px; display: flex; flex-direction: column; gap: 40px; }
+.page { min-height: 100%; max-width: 1344px; margin: 0 auto; padding: 40px 64px 32px; display: flex; flex-direction: column; gap: 40px; }
 .page--cloud { gap: 28px; }
 .page--deck { flex: 1; min-height: 0; max-width: none; padding: 0; gap: 0; }
 .page__head { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
@@ -548,7 +548,7 @@ html[data-streaming='true'] .app-ui { visibility: hidden; }
   .smain__inner { max-width: 820px; }
 }
 @media (min-width: 2200px) {
-  .page { max-width: 1760px; padding-left: 80px; }
+  .page { max-width: 1760px; padding-inline: 80px; }
   .smain__inner { max-width: 900px; }
   .snav { flex-basis: 300px; padding-left: 48px; }
 }
