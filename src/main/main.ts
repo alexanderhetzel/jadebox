@@ -8,6 +8,7 @@ import { SettingsStore } from './settings';
 import { parseLaunchArgs } from './args';
 import { XenithCore } from './core';
 import { registerIpc } from './ipc';
+import { setScreenFps } from './screen-fps';
 import { onEvent, emit } from './events';
 import { log, logWarn } from './log';
 import { withTimeout } from './util';
@@ -74,6 +75,7 @@ function bootstrap() {
     if (quitting) return;
     quitting = true;
     compareWin?.close();
+    setScreenFps(false, null);
     stopPowerEvents?.();
     await refresh?.restore();
     await withTimeout(core.sessions.stopAll('user'), 6000);

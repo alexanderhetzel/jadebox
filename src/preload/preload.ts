@@ -59,6 +59,7 @@ const api: XenithApiFull = {
   reportAudioOutputs: (list) => send('reportAudioOutputs', list),
   reportRumble: (r) => send('reportRumble', r),
   reportStreamDiag: (event, data) => send('reportStreamDiag', event, data),
+  setScreenFps: (on) => send('setScreenFps', !!on),
   installUpdate: () => send('installUpdate'),
 
   on: (listener) => {

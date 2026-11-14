@@ -23,6 +23,8 @@ npmRebuild: false
 nodeGypRebuild: false
 buildDependenciesFromSource: false
 asar: true
+asarUnpack:
+  - dist/screen-fps.exe    # spawned by src/main/screen-fps.ts; an exe cannot run from inside app.asar
 electronLanguages: [en-US, ru]
 extraMetadata:
   main: dist/main.js

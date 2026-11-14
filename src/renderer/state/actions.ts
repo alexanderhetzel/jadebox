@@ -207,6 +207,8 @@ function onEvent(ev: XenithEventExt): void {
     case 'updateReady':
       setState({ update: { version: ev.version, ready: true } });
       break;
+    case 'screenFps':
+      break;   // read by the stream controller's own listener
     default:
       handleMainEvent(ev);
   }

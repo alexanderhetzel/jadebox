@@ -12,6 +12,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 
 static class ScreenFps {
+  [DllImport("user32.dll")] static extern bool SetProcessDpiAwarenessContext(IntPtr context);
   [DllImport("dxgi.dll")] static extern int CreateDXGIFactory1(ref Guid riid, out IntPtr factory);
   [DllImport("d3d11.dll")] static extern int D3D11CreateDevice(IntPtr adapter, int driverType, IntPtr software, uint flags,
     IntPtr featureLevels, uint levels, uint sdkVersion, out IntPtr device, out int featureLevel, out IntPtr context);
@@ -54,12 +55,15 @@ static class ScreenFps {
   static void Check(int hr, string what) { if (hr < 0) throw new Exception(string.Format("{0} failed: 0x{1:X8}", what, hr)); }
 
   static int Main(string[] args) {
+    // Per-monitor DPI aware: output coordinates are then physical pixels, like the --at point Electron passes.
+    SetProcessDpiAwarenessContext(new IntPtr(-4));
     string display = null; int seconds = 0; double fraction = 0.5;
     for (int i = 0; i < args.Length; i++) {
       if (args[i] == "--display" && i + 1 < args.Length) display = args[++i];
+      else if (args[i] == "--at" && i + 1 < args.Length) display = "@" + args[++i];   // the monitor containing desktop point x,y
       else if (args[i] == "--seconds" && i + 1 < args.Length) seconds = int.Parse(args[++i]);
       else if (args[i] == "--region" && i + 1 < args.Length) fraction = double.Parse(args[++i], System.Globalization.CultureInfo.InvariantCulture);
-      else { Console.Error.WriteLine("usage: screen-fps [--display \\\\.\\DISPLAY1] [--seconds N] [--region 0.5]"); return 2; }
+      else { Console.Error.WriteLine("usage: screen-fps [--display \\\\.\\DISPLAY1 | --at x,y] [--seconds N] [--region 0.5]"); return 2; }
     }
     try { return Run(display, seconds, Math.Min(1, Math.Max(0.05, fraction))); }
     catch (Exception e) { Console.Error.WriteLine(e.Message); return 1; }
@@ -76,8 +80,7 @@ static class ScreenFps {
       IntPtr o;
       for (uint n = 0; Slot<EnumFn>(adapter, 7)(adapter, n, out o) >= 0; n++) {
         OutputDesc d; Slot<OutputDescFn>(o, 7)(o, out d);
-        bool primary = d.Left == 0 && d.Top == 0;
-        if (d.Attached != 0 && (display == null ? primary : string.Equals(d.DeviceName, display, StringComparison.OrdinalIgnoreCase))) { output = o; desc = d; break; }
+        if (d.Attached != 0 && Matches(d, display)) { output = o; desc = d; break; }
         Release(o);
       }
       if (output == IntPtr.Zero) Release(adapter);
@@ -140,6 +143,15 @@ static class ScreenFps {
     }
     Release(dup); Release(staging); Release(context); Release(device); Release(output1); Release(output); Release(adapter); Release(factory);
     return 0;
+  }
+
+  /** null = primary monitor, "@x,y" = the monitor containing that desktop point, otherwise a \\.\DISPLAYn name. */
+  static bool Matches(OutputDesc d, string display) {
+    if (display == null) return d.Left == 0 && d.Top == 0;
+    if (!display.StartsWith("@")) return string.Equals(d.DeviceName, display, StringComparison.OrdinalIgnoreCase);
+    var p = display.Substring(1).Split(',');
+    int x = int.Parse(p[0]), y = int.Parse(p[1]);
+    return x >= d.Left && x < d.Right && y >= d.Top && y < d.Bottom;
   }
 
   /** Copies the sampled pixels into cur and reports whether any differs from prev by more than Threshold. */

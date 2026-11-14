@@ -155,6 +155,7 @@ export interface StreamStats {
   frameHeight: number | null;
   fps: number | null;
   gameFps: number | null;          // frames per second that differ from the previous one; null while the HUD is off
+  screenFps: number | null;        // Windows: pictures per second that reached the monitor (after Lossless Scaling); null while the HUD is off
   kbps: number | null;
   rttMs: number | null;
   jitterMs: number | null;

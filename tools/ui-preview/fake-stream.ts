@@ -66,7 +66,7 @@ export function createStreamController(): StreamController {
       emit('rumble', { at: Date.now() - 2000, left: 0.4, right: 0.25, lt: 0, rt: 0, durationMs: 120 });
       const tick = () => emit('stats', {
         at: Date.now(), frameWidth: opts.settings.streaming.resolution === '720' ? 1280 : 1920, frameHeight: opts.settings.streaming.resolution === '720' ? 720 : 1080,
-        fps: 60, gameFps: 30, kbps: 16900, rttMs: opts.settings.streaming.resolution === '720' ? 4 : 1, jitterMs: 0.4, jitterBufferMs: 2.6, decodeMsPerFrame: 0.3,
+        fps: 60, gameFps: 30, screenFps: 120,kbps: 16900, rttMs: opts.settings.streaming.resolution === '720' ? 4 : 1, jitterMs: 0.4, jitterBufferMs: 2.6, decodeMsPerFrame: 0.3,
         packetsLost: 0, framesDropped: 0, codec: 'H.264 Main 4.2', decoder: 'FIXTURE', hardwareDecode: true,
       });
       tick();

@@ -147,6 +147,8 @@ export const ru = {
     fps: 'Кадры потока',
     gameFps: 'Кадры игры',
     gameShort: 'Игра',
+    screenFps: 'Кадры на экране',
+    screenShort: 'Экран',
     bitrate: 'Битрейт',
     rtt: 'Сеть, туда и обратно',
     jitterBuffer: 'Буфер видео',

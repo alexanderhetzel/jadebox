@@ -3,7 +3,7 @@
 import xStreamingPlayer from '../../../vendor/xstreaming-player/src/index';
 import type { SessionError, SessionErrorCode, Settings, StageEvent, StageId, StreamStats } from '../../shared/api';
 import type { StreamController, StreamControllerEvents, StreamStartOptions, StreamState } from '../../shared/stream-controller';
-import type { XenithApiFull } from '../../shared/core-additions';
+import type { XenithApiFull, XenithEventExt } from '../../shared/core-additions';
 import { effectiveSettings, type EffectiveSettings } from './settings-map';
 import { setVideoBandwidth } from './sdp';
 import { StatsSampler } from './stats';
@@ -97,8 +97,10 @@ interface Live {
   picCtx: CanvasRenderingContext2D | null;
   /** Counts new game frames while the HUD is on (the stream itself is 60 fps whatever the game renders). */
   counter: { dedupe: FrameDedupe; changed: number; at: number } | null;
+  /** Windows monitor counter (main runs screen-fps.exe) while the HUD is on: latest value and its unsubscribe. */
+  screen: { value: number | null; at: number; off: () => void } | null;
   /** Sums for the 10 s 'stream.frames' log line. */
-  frameLog: { ticks: number; fps: number; nFps: number; game: number; nGame: number };
+  frameLog: { ticks: number; fps: number; nFps: number; game: number; nGame: number; screen: number; nScreen: number };
 }
 
 export class XenithStreamController implements StreamController {
@@ -310,7 +312,7 @@ export class XenithStreamController implements StreamController {
 
     const live: Live = {
       gen, sessionId, player, pc, holder, sampler: null as any, input: null as any, post: null, audioTap: null, audioEl: null,
-      video: null, timers: [], connected: false, firstFrame: null, firstFrameSent: false, inputStarted: false, lostTimer: null, answerSdp: null, connectedAt: 0, ticks: 0, pic: new PictureWatch(), picCtx: null, counter: null, frameLog: { ticks: 0, fps: 0, nFps: 0, game: 0, nGame: 0 },
+      video: null, timers: [], connected: false, firstFrame: null, firstFrameSent: false, inputStarted: false, lostTimer: null, answerSdp: null, connectedAt: 0, ticks: 0, pic: new PictureWatch(), picCtx: null, counter: null, screen: null, frameLog: { ticks: 0, fps: 0, nFps: 0, game: 0, nGame: 0, screen: 0, nScreen: 0 },
     };
     live.sampler = new StatsSampler(pc, () => live.answerSdp);
     this.live = live; // before install(): the first controllers scan must reach listeners
@@ -407,6 +409,7 @@ export class XenithStreamController implements StreamController {
       const r = await live.sampler.sample();
       if (!r || this.live !== live) return;
       r.stats.gameFps = this.gameFps(live);
+      r.stats.screenFps = this.screenFps(live);
       this.logFrames(live, r.stats);
       this.emit('stats', r.stats);
       this.debug('stats', { ...r.stats, ...r.extra, post: live.post?.mode ?? null });
@@ -477,9 +480,33 @@ export class XenithStreamController implements StreamController {
     const a = live.frameLog;
     if (s.fps != null) { a.fps += s.fps; a.nFps++; }
     if (s.gameFps != null) { a.game += s.gameFps; a.nGame++; }
+    if (s.screenFps != null) { a.screen += s.screenFps; a.nScreen++; }
     if (++a.ticks < 10) return;
-    if (a.nFps) this.diag('frames', { fps: Math.round(a.fps / a.nFps), gameFps: a.nGame ? Math.round(a.game / a.nGame) : null, w: s.frameWidth, h: s.frameHeight, post: live.post?.mode ?? null });
-    live.frameLog = { ticks: 0, fps: 0, nFps: 0, game: 0, nGame: 0 };
+    const avg = (sum: number, n: number) => (n ? Math.round(sum / n) : null);
+    if (a.nFps) this.diag('frames', { fps: avg(a.fps, a.nFps), gameFps: avg(a.game, a.nGame), screenFps: avg(a.screen, a.nScreen), w: s.frameWidth, h: s.frameHeight, post: live.post?.mode ?? null });
+    live.frameLog = { ticks: 0, fps: 0, nFps: 0, game: 0, nGame: 0, screen: 0, nScreen: 0 };
+  }
+
+  /** Pictures per second on the monitor, measured by the main process (Windows only); null while the HUD is off. */
+  private screenFps(live: Live): number | null {
+    const x = window.xenith as XenithApiFull;
+    const want = !!live.firstFrame && this.settings?.video.hud !== 'off';
+    if (!want) { this.stopScreenFps(live); return null; }
+    if (!live.screen) {
+      const s: NonNullable<Live['screen']> = { value: null, at: 0, off: () => {} };
+      s.off = x.on((ev) => { const e = ev as XenithEventExt; if (e.type === 'screenFps') { s.value = e.changed; s.at = Date.now(); } });
+      live.screen = s;
+      x.setScreenFps?.(true);
+      return null;
+    }
+    return Date.now() - live.screen.at < 3000 ? live.screen.value : null;
+  }
+
+  private stopScreenFps(live: Live) {
+    if (!live.screen) return;
+    live.screen.off();
+    live.screen = null;
+    (window.xenith as XenithApiFull).setScreenFps?.(false);
   }
 
   /** New game frames per second since the last tick, or null while the HUD is off or counting just started. */
@@ -504,6 +531,7 @@ export class XenithStreamController implements StreamController {
     for (const t of live.timers) clearInterval(t);
     if (live.lostTimer !== null) clearTimeout(live.lostTimer);
     live.counter?.dedupe.stop();
+    this.stopScreenFps(live);
     try { live.post?.dispose(); } catch { /* ignore */ }
     try { live.audioTap?.close(); } catch { /* ignore */ }
     try { live.input.dispose(); } catch { /* ignore */ }

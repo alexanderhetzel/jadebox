@@ -73,6 +73,7 @@ function Hud({ stats, mode, corner, lossTrend, i18n, deck }: { stats: StreamStat
       <dl className={cx('hud hud--compact', `hud--${corner}`, deck && 'hud--deck')} aria-label={st.hudAria}>
         <div><dt>{st.video}</dt><dd>{stats ? `${f.res(stats.frameWidth, stats.frameHeight)}, ${f.fps(stats.fps)}` : s.common.dash}</dd></div>
         <div><dt>{st.gameShort}</dt><dd>{f.fps(stats?.gameFps ?? null)}</dd></div>
+        {stats?.screenFps != null && <div><dt>{st.screenShort}</dt><dd>{f.fps(stats.screenFps)}</dd></div>}
         <div><dt>{st.net}</dt><dd>{f.ms(stats?.rttMs ?? null, 0)}</dd></div>
         <div><dt>{st.lossShort}</dt><dd className={lossTone}>{stats ? stats.packetsLost : s.common.dash}</dd></div>
       </dl>
@@ -83,6 +84,7 @@ function Hud({ stats, mode, corner, lossTrend, i18n, deck }: { stats: StreamStat
       <dt>{st.resolution}</dt><dd>{f.res(stats?.frameWidth ?? null, stats?.frameHeight ?? null)}</dd>
       <dt>{st.fps}</dt><dd>{stats?.fps != null ? Math.round(stats.fps) : s.common.dash}</dd>
       <dt>{st.gameFps}</dt><dd>{stats?.gameFps != null ? stats.gameFps : s.common.dash}</dd>
+      {stats?.screenFps != null && <><dt>{st.screenFps}</dt><dd>{stats.screenFps}</dd></>}
       <dt>{st.bitrate}</dt><dd>{f.mbps(stats?.kbps ?? null)}</dd>
       <dt>{st.rtt}</dt><dd>{f.ms(stats?.rttMs ?? null, 0)}</dd>
       <dt>{st.jitterBuffer}</dt><dd>{f.ms(stats?.jitterBufferMs ?? null)}</dd>

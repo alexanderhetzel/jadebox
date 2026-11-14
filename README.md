@@ -36,7 +36,7 @@ Cloud gaming needs a Game Pass plan that includes it, and it works only in count
 
 The overlay shows what actually arrives: frame resolution, bitrate, network round-trip time, video buffer, decode time, and packet loss. If the console sends 1080p, Jadebox shows 1080p even when you asked for 1440p. Use it to see whether lag comes from the network or from your device.
 
-The stream itself always runs at about 60 frames per second, even when the game renders 30. "Game frames" counts only the frames that differ from the previous one, which is how many frames the game actually produces. A still picture, such as a paused menu, shows fewer game frames than the game renders, because identical frames are not counted. The counter runs only while the overlay is on: it compares every frame on the GPU. Every 10 seconds the app log gets a `stream.frames` line with the average stream and game frame rates, the resolution and the picture mode; its game frame rate is empty while the overlay is off.
+The stream itself always runs at about 60 frames per second, even when the game renders 30. "Game frames" counts only the frames that differ from the previous one, which is how many frames the game actually produces. A still picture, such as a paused menu, shows fewer game frames than the game renders, because identical frames are not counted. The counter runs only while the overlay is on: it compares every frame on the GPU. On Windows the overlay also shows "Frames on screen": how many different pictures per second reach the monitor that shows Jadebox, after Lossless Scaling. It comes from the frame counter described under [Count the frames your monitor shows](#count-the-frames-your-monitor-shows-windows) and measures the centre half of that monitor, so it rises with frame generation and drops to almost nothing on a still picture. Every 10 seconds the app log gets a `stream.frames` line with the average stream, game and on-screen frame rates, the resolution and the picture mode; the measured rates are empty while the overlay is off.
 
 ### Profiles and picture controls
 
@@ -205,7 +205,7 @@ The Lossless Scaling counter reports how many frames it sends. To see how many d
 powershell -ExecutionPolicy Bypass -File tools/screen-fps/run.ps1
 ```
 
-It uses Windows Desktop Duplication and needs no administrator rights. Every second it prints the monitor's desktop updates and how many of them changed the picture in the centre half of the screen. With frame generation working, "changed" should be close to the Lossless Scaling output rate while the camera moves; without it, close to "Game frames". Use `--display \\.\DISPLAY2` for another monitor and `--seconds 10` to stop on its own. The counter itself copies a region of every frame, so it costs a little GPU time while it runs.
+The same counter feeds "Frames on screen" in the overlay; the script is for a terminal or another app. It uses Windows Desktop Duplication and needs no administrator rights. Every second it prints the monitor's desktop updates and how many of them changed the picture in the centre half of the screen. With frame generation working, "changed" should be close to the Lossless Scaling output rate while the camera moves; without it, close to "Game frames". Use `--display \\.\DISPLAY2` for another monitor and `--seconds 10` to stop on its own. The counter itself copies a region of every frame, so it costs a little GPU time while it runs.
 
 ### Why drop repeated frames
 

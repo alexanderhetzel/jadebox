@@ -65,6 +65,7 @@ export class StatsSampler {
       frameHeight: v.frameHeight ?? null,
       fps: v.framesPerSecond ?? null,
       gameFps: null,
+      screenFps: null,
       kbps,
       rttMs: pair?.currentRoundTripTime != null ? r1(pair.currentRoundTripTime * 1000) : null,
       jitterMs: v.jitter != null ? r1(v.jitter * 1000) : null,

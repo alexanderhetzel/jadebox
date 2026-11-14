@@ -10,6 +10,7 @@ import { AuthError } from './xbox-auth';
 import { GssvError } from './xhome-api';
 import { ipcError, SessionFail, toSessionError } from './errors';
 import { logWarn } from './log';
+import { setScreenFps } from './screen-fps';
 import { showSteamKeyboard } from './steam-keyboard';
 
 type Invokable = Exclude<keyof XenithApi, 'on' | 'window' | 'sessionReport' | 'sessionStage'>;
@@ -97,6 +98,7 @@ export function registerIpc(core: XenithCore, getWindow: () => BrowserWindow | n
     reportRumble: (r) => core.reportRumble(r),
     reportStreamDiag: (event, data) => core.reportStreamDiag(event, data),
     installUpdate: () => installUpdate(),
+    setScreenFps: (on) => setScreenFps(on === true, getWindow()),
   };
   for (const [name, fn] of Object.entries(fire)) on(name, fn);
 }

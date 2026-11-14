@@ -84,7 +84,7 @@ export const en: Strings = {
   },
   stream: {
     videoAria: 'Game video', hudAria: 'Stream statistics',
-    resolution: 'Resolution', fps: 'Stream frames', gameFps: 'Game frames', gameShort: 'Game',bitrate: 'Bitrate', rtt: 'Network round trip', jitterBuffer: 'Video buffer',
+    resolution: 'Resolution', fps: 'Stream frames', gameFps: 'Game frames', gameShort: 'Game', screenFps: 'Frames on screen', screenShort: 'Screen', bitrate: 'Bitrate', rtt: 'Network round trip', jitterBuffer: 'Video buffer',
     decode: 'Decode', loss: 'Packets lost', video: 'Video', net: 'Network', lossShort: 'Lost',
     menuAria: 'Session menu',
     inGame: (min) => min < 1 ? 'Playing for less than a minute' : `Playing for ${min} ${p(min, 'minute', 'minutes')}`,

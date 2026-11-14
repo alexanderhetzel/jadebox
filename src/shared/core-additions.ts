@@ -15,11 +15,13 @@ export interface XenithCoreExtras {
   /** Renderer stream diagnostics (picture state, post-processing errors) written to the main log as
    *  `stream.<event>`. Fire-and-forget. */
   reportStreamDiag(event: string, data?: unknown): void;
+  /** Windows: start or stop counting the pictures that reach the monitor (main emits 'screenFps' each second). */
+  setScreenFps(on: boolean): void;
   /** Quit and install the downloaded update (see updateReady). Fire-and-forget. */
   installUpdate(): void;
 }
 
 /** Extra event: a second launch (e.g. a Steam shortcut with --xcloud=<titleId>) while Xenith is running. */
-export type XenithEventExt = XenithEvent | { type: 'launchIntent'; intent: LaunchIntent } | { type: 'updateReady'; version: string };
+export type XenithEventExt = XenithEvent | { type: 'launchIntent'; intent: LaunchIntent } | { type: 'updateReady'; version: string } | { type: 'screenFps'; changed: number };
 
 export type XenithApiFull = XenithApi & XenithCoreExtras;
