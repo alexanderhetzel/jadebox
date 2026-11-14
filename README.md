@@ -197,6 +197,16 @@ If the Lossless Scaling counter shows 60 in and the motion still looks like 30, 
 
 The reference window shares the decoded stream inside Jadebox, so nothing is encoded again and the picture keeps its full resolution. Both windows show the same frame within about one screen refresh. Matching monitor refresh rates make the result easier to judge. The second window and LSFG combination still need verification with a real Xbox and Lossless Scaling; a higher FPS counter alone does not establish smoother motion.
 
+### Count the frames your monitor shows (Windows)
+
+The Lossless Scaling counter reports how many frames it sends. To see how many different pictures actually reach the monitor, run the frame counter from a source checkout while the game is on screen:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools/screen-fps/run.ps1
+```
+
+It uses Windows Desktop Duplication and needs no administrator rights. Every second it prints the monitor's desktop updates and how many of them changed the picture in the centre half of the screen. With frame generation working, "changed" should be close to the Lossless Scaling output rate while the camera moves; without it, close to "Game frames". Use `--display \\.\DISPLAY2` for another monitor and `--seconds 10` to stop on its own. The counter itself copies a region of every frame, so it costs a little GPU time while it runs.
+
 ### Why drop repeated frames
 
 The Xbox stream runs at 60 fps even when the game itself runs at 30. Every game frame then reaches the PC twice. Without the filter, LSFG sees pairs of identical frames, has nothing to draw between them, and the motion stays at 30 fps.

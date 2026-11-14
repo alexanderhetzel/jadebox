@@ -4,6 +4,13 @@ Categories: **[HW]** confirmed on real hardware · **[LOCAL]** local check only 
 
 ## 2026-11-14
 
+### C2 [HW] Frame counter on the monitor (tools/screen-fps)
+
+On the Radeon RX 9070 XT PC with a 2560×1440 240 Hz primary monitor, 	ools/screen-fps/check.cjs drew soft grey steps over the measured region. Changing every refresh: window drew 231.5/s, screen-fps counted 238.7 changed/s. Every 4th refresh: 60.0 drawn, 60.0 counted. No change: 0.0 counted. Electron's own screen capture topped out at about 42 frames/s on the same monitor, which is why the counter uses DXGI Desktop Duplication.
+
+[TODO HW] Run it during a Remote Play session with Lossless Scaling on and off.
+
+
 ### C1 [LOCAL] Two-window Remote Play comparison
 
 `npm run build`, `npm run typecheck`, and `node tools/ui-preview/check-dedupe.mjs` passed. The first version relayed video over local WebRTC; on real hardware the reference window showed a lower resolution with a delay. It was replaced by a same-process window that shows the main window's own picture. `tools/ui-preview/check-compare.cjs` runs the real `stream/compare.ts` against a WebGL canvas without `preserveDrawingBuffer` (like sharpening) and a plain video: the second window received 238 distinct frames per second at the full 640×360, followed the switch from canvas to video, copied the picture filter, and reported a missing monitor. English and Russian in-game menu previews passed the rendered-page check; matching README screenshots were updated.
