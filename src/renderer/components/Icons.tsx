@@ -16,7 +16,16 @@ export const IconCloud = ({ size, ...p }: P) => (
 export const IconSliders = ({ size, ...p }: P) => (
   <svg {...base(size)} {...p}><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12" /><circle cx="16" cy="6" r="2" /><circle cx="10" cy="12" r="2" /><circle cx="18" cy="18" r="2" /></svg>
 );
-export const IconPlay = ({ size = 20, ...p }: P) => (
+export const IconExpand = ({ size, ...p }: P) => (
+  <svg {...base(size)} {...p}><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" /></svg>
+);
+export const IconCollapse = ({ size, ...p }: P) => (
+  <svg {...base(size)} {...p}><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" /></svg>
+);
+export const IconPower = ({ size, ...p }: P) => (
+  <svg {...base(size)} {...p}><path d="M12 3v8" /><path d="M6.4 7.2a7 7 0 1 0 11.2 0" /></svg>
+);
+export const IconPlay =({ size = 20, ...p }: P) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden focusable={false} {...p}><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z" /></svg>
 );
 export const IconCheck = ({ size = 16, ...p }: P) => (

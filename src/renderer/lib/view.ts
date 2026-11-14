@@ -6,6 +6,18 @@ import type { RailItem } from '../components/data';
 import type { SessionState, StageState } from '../state/store';
 import type { Tone } from '../components/feedback';
 
+/** Full screen is read from the window size, so F11 and the main-process toggle keep it current. */
+export function useFullscreen(): [boolean, () => void] {
+  const read = () => Math.abs(window.innerWidth - screen.width) < 2 && Math.abs(window.innerHeight - screen.height) < 2;
+  const [fs, setFs] = useState(read);
+  useEffect(() => {
+    const onResize = () => setFs(read());
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+  return [fs, () => { void window.xenith.window.toggleFullscreen(); }];
+}
+
 export function useNow(intervalMs: number, active = true): number {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {

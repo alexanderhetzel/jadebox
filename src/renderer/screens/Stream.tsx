@@ -3,9 +3,10 @@ import type { HudCorner, Settings, StreamProfile, StreamStats, VideoFit } from '
 import { fitForTarget, fitPatch } from '../../shared/video-fit';
 import { Button, cx, Segmented, Slider, Toggle } from '../components/controls';
 import { useI18n, type I18n } from '../i18n';
-import { useNow } from '../lib/view';
+import { useFullscreen, useNow } from '../lib/view';
 import { useFocusTrap, useNavLayer } from '../nav/hooks';
 import { updateSettings } from '../state/actions';
+import { startComparison, stopComparison } from '../stream/compare';
 import { disconnect, pressGuide, registerStreamContainer, retry, toggleOverlay } from '../state/session';
 import { useApp } from '../state/store';
 import { ERROR_TONE } from './errors';
@@ -18,6 +19,7 @@ export function StreamLayer() {
   const mounted = phase !== 'idle';
   const ref = useCallback((el: HTMLDivElement | null) => registerStreamContainer(el), []);
   const { s } = useI18n();
+  useEffect(() => { if (phase !== 'streaming') stopComparison(); }, [phase]);
   return (
     <div className={cx('stream', visible && 'is-visible')} aria-hidden={!visible}>
       <div ref={ref} className="stream__video" role="img" aria-label={s.stream.videoAria} />
@@ -70,6 +72,7 @@ function Hud({ stats, mode, corner, lossTrend, i18n, deck }: { stats: StreamStat
     return (
       <dl className={cx('hud hud--compact', `hud--${corner}`, deck && 'hud--deck')} aria-label={st.hudAria}>
         <div><dt>{st.video}</dt><dd>{stats ? `${f.res(stats.frameWidth, stats.frameHeight)}, ${f.fps(stats.fps)}` : s.common.dash}</dd></div>
+        <div><dt>{st.gameShort}</dt><dd>{f.fps(stats?.gameFps ?? null)}</dd></div>
         <div><dt>{st.net}</dt><dd>{f.ms(stats?.rttMs ?? null, 0)}</dd></div>
         <div><dt>{st.lossShort}</dt><dd className={lossTone}>{stats ? stats.packetsLost : s.common.dash}</dd></div>
       </dl>
@@ -79,6 +82,7 @@ function Hud({ stats, mode, corner, lossTrend, i18n, deck }: { stats: StreamStat
     <dl className={cx('hud', `hud--${corner}`)} aria-label={st.hudAria}>
       <dt>{st.resolution}</dt><dd>{f.res(stats?.frameWidth ?? null, stats?.frameHeight ?? null)}</dd>
       <dt>{st.fps}</dt><dd>{stats?.fps != null ? Math.round(stats.fps) : s.common.dash}</dd>
+      <dt>{st.gameFps}</dt><dd>{stats?.gameFps != null ? stats.gameFps : s.common.dash}</dd>
       <dt>{st.bitrate}</dt><dd>{f.mbps(stats?.kbps ?? null)}</dd>
       <dt>{st.rtt}</dt><dd>{f.ms(stats?.rttMs ?? null, 0)}</dd>
       <dt>{st.jitterBuffer}</dt><dd>{f.ms(stats?.jitterBufferMs ?? null)}</dd>
@@ -121,12 +125,6 @@ function BridgeNotice() {
 
 const PROFILES: StreamProfile[] = ['low-latency', 'quality', 'battery'];
 
-function useFullscreen(): [boolean, () => void] {
-  const [fs, setFs] = useState(() => Math.abs(window.innerWidth - screen.width) < 2 && Math.abs(window.innerHeight - screen.height) < 2);
-  const toggle = () => { void window.xenith.window.toggleFullscreen().then(setFs); };
-  return [fs, toggle];
-}
-
 function SidePanel() {
   const i18n = useI18n();
   const { s } = i18n;
@@ -134,6 +132,9 @@ function SidePanel() {
   const deck = useApp(x => x.deck);
   const sess = useApp(x => x.session)!;
   const settings = useApp(x => x.settings);
+  const bridge = useApp(x => x.settings.haptics.bridgeMode);
+  const platform = useApp(x => x.platform);
+  const [compareError, setCompareError] = useState('');
   const pads = useApp(x => x.controllers);
   const ref = useRef<HTMLElement>(null);
   const now = useNow(15000);
@@ -150,6 +151,12 @@ function SidePanel() {
   const profiles = deck || settings.streaming.profile === 'battery' ? PROFILES : PROFILES.slice(0, 2);
   const setVideo = (p: Partial<Settings['video']>) => updateSettings({ video: p });
   const fit = fitForTarget(settings, sess);
+  const compare = () => {
+    const container = document.querySelector<HTMLElement>('.stream__video');
+    const result = container ? startComparison(container, st.compareLabel) : 'no-display';
+    if (result === 'no-display') setCompareError(st.compareNoDisplay);
+    else { setCompareError(''); close(); }
+  };
 
   if (deck) {
     const hudCycle: Settings['video']['hud'][] = ['off', 'compact', 'full'];
@@ -215,6 +222,11 @@ function SidePanel() {
         <span className="kv"><span className="muted">{st.controller}</span><span>{pad?.name ?? st.noController}</span></span>
         <span className="kv"><span className="muted">{st.vibration}</span><span>{vib}</span></span>
       </div>
+      {platform?.os === 'win32' && sess.kind === 'home' && !bridge && <div className="spanel__group">
+        <Button variant="secondary" size="l" block onClick={compare}>{st.compareOpen}</Button>
+        <p className="tiny muted">{st.compareHelp}</p>
+        {compareError && <p className="tiny warn-text" role="alert">{compareError}</p>}
+      </div>}
       <div className="spanel__actions">
         <Button variant="secondary" size="l" block onClick={pressGuide} navId="sp-guide">{st.guide}</Button>
         <Button variant="danger" size="l" block onClick={() => void disconnect()} navId="sp-disc">{s.common.disconnect}</Button>

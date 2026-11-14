@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { UiScale } from '../shared/api';
 import { cx } from './components/controls';
 import { ToastHost } from './components/feedback';
-import { IconCloud, IconConsole, IconSliders, JadeboxMark } from './components/Icons';
+import { IconCloud, IconCollapse, IconConsole, IconExpand, IconPower, IconSliders, JadeboxMark } from './components/Icons';
+import { useFullscreen } from './lib/view';
 import { I18nContext, makeI18n, useI18n } from './i18n';
 import { readGamepads } from './lib/controllers';
 import { reportAudioOutputs } from './lib/api';
@@ -131,6 +132,7 @@ function NavRail({ screen }: { screen: Screen }) {
   ];
   const phase = useApp(x => x.session?.phase);
   const locked = screen === 'connecting' && phase === 'connecting';
+  const [fs, toggleFs] = useFullscreen();
   return (
     <nav className="rail-nav" aria-label={s.nav.aria} data-nav-region="" data-nav-contain="v">
       <div aria-hidden className="brand"><JadeboxMark size={20} /></div>
@@ -149,6 +151,15 @@ function NavRail({ screen }: { screen: Screen }) {
           <span>{it.label}</span>
         </button>
       ))}
+      <div className="rail-nav__spacer" />
+      <button type="button" data-nav="" data-nav-id="nav-fullscreen" className="rail-nav__item" onClick={toggleFs}>
+        {fs ? <IconCollapse /> : <IconExpand />}
+        <span>{fs ? s.nav.window : s.nav.fullscreen}</span>
+      </button>
+      <button type="button" data-nav="" data-nav-id="nav-quit" className="rail-nav__item" onClick={() => void window.xenith.window.quit()}>
+        <IconPower />
+        <span>{s.nav.quit}</span>
+      </button>
     </nav>
   );
 }

@@ -2,6 +2,14 @@
 
 Categories: **[HW]** confirmed on real hardware · **[LOCAL]** local check only · **[TODO]** needs hardware.
 
+## 2026-11-14
+
+### C1 [LOCAL] Two-window Remote Play comparison
+
+`npm run build`, `npm run typecheck`, and `node tools/ui-preview/check-dedupe.mjs` passed. The first version relayed video over local WebRTC; on real hardware the reference window showed a lower resolution with a delay. It was replaced by a same-process window that shows the main window's own picture. `tools/ui-preview/check-compare.cjs` runs the real `stream/compare.ts` against a WebGL canvas without `preserveDrawingBuffer` (like sharpening) and a plain video: the second window received 238 distinct frames per second at the full 640×360, followed the switch from canvas to video, copied the picture filter, and reported a missing monitor. English and Russian in-game menu previews passed the rendered-page check; matching README screenshots were updated.
+
+[TODO HW] Open a real Xbox Remote Play session on a Windows PC with two monitors. Apply Lossless Scaling only to the primary Jadebox window, verify the reference window continues to show video and that motion looks smoother on the primary display. Check that both windows look identical without Lossless Scaling.
+
 ## 2026-10-22
 
 ### T1 [HW] Auth + discovery

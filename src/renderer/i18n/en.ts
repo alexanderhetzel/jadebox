@@ -12,7 +12,7 @@ export const en: Strings = {
     refresh: 'Refresh', close: 'Close', back: 'Back', signIn: 'Sign in', yes: 'Yes', no: 'No', on: 'On', off: 'Off',
     dash: '—', unknown: 'Unknown', loading: 'Loading', fixtures: 'Preview: fixture data',
   },
-  nav: { aria: 'Sections', home: 'Console', cloud: 'Cloud', settings: 'Settings' },
+  nav: { aria: 'Sections', home: 'Console', cloud: 'Cloud', settings: 'Settings', fullscreen: 'Full screen', window: 'Window', quit: 'Quit' },
   hints: {
     aria: 'Control hints',
     select: 'select', back: 'back', sections: 'sections', account: 'account', cancelConnect: 'cancel connection',
@@ -84,7 +84,7 @@ export const en: Strings = {
   },
   stream: {
     videoAria: 'Game video', hudAria: 'Stream statistics',
-    resolution: 'Resolution', fps: 'Frames per second', bitrate: 'Bitrate', rtt: 'Network round trip', jitterBuffer: 'Video buffer',
+    resolution: 'Resolution', fps: 'Stream frames', gameFps: 'Game frames', gameShort: 'Game',bitrate: 'Bitrate', rtt: 'Network round trip', jitterBuffer: 'Video buffer',
     decode: 'Decode', loss: 'Packets lost', video: 'Video', net: 'Network', lossShort: 'Lost',
     menuAria: 'Session menu',
     inGame: (min) => min < 1 ? 'Playing for less than a minute' : `Playing for ${min} ${p(min, 'minute', 'minutes')}`,
@@ -102,6 +102,10 @@ export const en: Strings = {
     bridgeTitle: 'Video is off: Controller Bridge is on',
     bridgeBody: 'The stream is received but not shown, for playing on a TV connected to the Xbox. You can also turn this off in Settings, X-Haptics.',
     bridgeOff: 'Show video',
+    compareOpen: 'Open comparison on second monitor',
+    compareHelp: 'The second window shows the same picture without frame generation. Apply Lossless Scaling to the main window only. Esc in the second window closes it.',
+    compareNoDisplay: 'Connect a second monitor first.',
+    compareLabel: 'No frame generation',
   },
   cloud: {
     title: 'Cloud',

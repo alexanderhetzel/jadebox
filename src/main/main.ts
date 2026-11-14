@@ -1,5 +1,5 @@
 // Xenith main process bootstrap.
-import { app, BrowserWindow, Menu, powerSaveBlocker } from 'electron';
+import { app, BrowserWindow, Menu, powerSaveBlocker, screen } from 'electron';
 import { existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { platform, setPlatformLayer } from './platform';
@@ -47,6 +47,7 @@ if (!gotLock) {
 
 function bootstrap() {
   let win: BrowserWindow | null = null;
+  let compareWin: BrowserWindow | null = null;
   let blocker: number | null = null;
   let quitting = false;
   let stopPowerEvents: (() => void) | null = null;
@@ -72,6 +73,7 @@ function bootstrap() {
   const quit = async () => {
     if (quitting) return;
     quitting = true;
+    compareWin?.close();
     stopPowerEvents?.();
     await refresh?.restore();
     await withTimeout(core.sessions.stopAll('user'), 6000);
@@ -131,8 +133,22 @@ function bootstrap() {
       }
     });
 
-    // No navigation away from the app, no popups.
-    w.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+    // No navigation away from the app. The only popup is the comparison window (stream/compare.ts): it opens
+    // full screen on another monitor and stays in this renderer process, so it shows the decoded stream as is.
+    w.webContents.setWindowOpenHandler(({ url, frameName }) => {
+      const here = screen.getDisplayMatching(w.getBounds()).id;
+      const other = screen.getAllDisplays().find((d) => d.id !== here);
+      if (url !== 'about:blank' || frameName !== 'jadebox-compare' || !other) return { action: 'deny' };
+      const b = other.bounds;
+      return { action: 'allow', overrideBrowserWindowOptions: { x: b.x, y: b.y, width: b.width, height: b.height, fullscreen: true, autoHideMenuBar: true, backgroundColor: '#000000' } };
+    });
+    w.webContents.on('did-create-window', (child) => {
+      compareWin = child;
+      child.on('closed', () => { if (compareWin === child) compareWin = null; });
+      child.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+      child.webContents.on('will-navigate', (e) => e.preventDefault());
+      w.focus();
+    });
     w.webContents.on('will-navigate', (e, url) => { if (!url.startsWith('file://')) e.preventDefault(); });
 
     w.on('close', (e) => {
@@ -140,7 +156,7 @@ function bootstrap() {
       e.preventDefault();
       void quit();
     });
-    w.on('closed', () => { win = null; });
+    w.on('closed', () => { compareWin?.close(); win = null; });
     w.webContents.on('render-process-gone', (_e, d) => logWarn('renderer.gone', { reason: d.reason, exitCode: d.exitCode }));
 
     const html = process.env.XENITH_RENDERER_HTML ? resolve(process.env.XENITH_RENDERER_HTML) : join(__dirname, 'renderer', 'index.html');

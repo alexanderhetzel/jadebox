@@ -36,6 +36,8 @@ Cloud gaming needs a Game Pass plan that includes it, and it works only in count
 
 The overlay shows what actually arrives: frame resolution, bitrate, network round-trip time, video buffer, decode time, and packet loss. If the console sends 1080p, Jadebox shows 1080p even when you asked for 1440p. Use it to see whether lag comes from the network or from your device.
 
+The stream itself always runs at about 60 frames per second, even when the game renders 30. "Game frames" counts only the frames that differ from the previous one, which is how many frames the game actually produces. A still picture, such as a paused menu, shows fewer game frames than the game renders, because identical frames are not counted. The counter runs only while the overlay is on: it compares every frame on the GPU.
+
 ### Profiles and picture controls
 
 Three profiles cover the common cases. "Lowest latency" keeps the video buffer at about 3 ms for fast games. "Picture quality" buffers more to smooth out an unstable network. "Battery saver" is for the Steam Deck.
@@ -145,6 +147,8 @@ Tokens use the operating system's secure storage on Windows and macOS. SteamOS a
 | Toggle full screen | Use the session menu | F11 or F10 |
 | Disconnect | Select "Disconnect" in the menu | Select "Disconnect" in the menu |
 
+Outside a stream, the bottom of the left panel has "Full screen" (or "Window" while in full screen) and "Quit". They work with the mouse and the gamepad.
+
 ## Frame generation with Lossless Scaling
 
 [Lossless Scaling](https://store.steampowered.com/app/993090/Lossless_Scaling/) is a paid Windows app on Steam. Its LSFG frame generation draws extra frames between the ones it captures from a window. Many console games run at 30 fps. With LSFG x2 over Jadebox you would see 60 fps on the PC screen.
@@ -173,12 +177,25 @@ This setup has not been tested with Jadebox yet. The steps below follow how Loss
 5. Sync mode: Default. Choose "Off (Allow tearing)" for lower latency if your monitor has VRR (FreeSync or G-Sync).
 6. Max frame latency: 1.
 7. Turn on "Draw FPS" for the first run, so you can see that generation works.
+8. Turn off "Clip cursor" if you use two monitors. With it on, the cursor stays inside the scaled window while frame generation runs.
+
+Lossless Scaling picks a profile without a path by its name, which must match the window or program name. Since the program file became `Jadebox.exe`, a profile named "Xenith" no longer applies; rename it to "Jadebox" or set its path to `Jadebox.exe`.
+
+If the Lossless Scaling counter shows 60 in and the motion still looks like 30, the game runs at 30 and every frame arrives twice. Check "Game frames" in the stream overlay, and turn on dropping repeated frames in Jadebox so Lossless Scaling sees the real 30.
 
 ### Start it
 
 1. Start a game in Jadebox and switch to full screen with F11.
 2. Press Ctrl+Alt+S, the default Lossless Scaling hotkey, while the Jadebox window is in front. Or click "Scale" in Lossless Scaling and switch to Jadebox within the delay.
 3. Press the hotkey again to stop.
+
+### Compare on two monitors (Windows Remote Play)
+
+1. Connect a second monitor and start Remote Play in Jadebox. Use a 30 fps game and set both monitors to the same refresh rate where possible.
+2. Open the in-game menu and select "Open comparison on second monitor". Jadebox opens a full-screen window there with the same picture as the main window (resolution, sharpening, brightness) and a "No frame generation" label. Both windows use one Xbox session; only the first window sends input.
+3. Apply Lossless Scaling to the **first Jadebox window only**. Move the game camera steadily and compare motion on both screens. Press Esc on the second monitor to close the reference window.
+
+The reference window shares the decoded stream inside Jadebox, so nothing is encoded again and the picture keeps its full resolution. Both windows show the same frame within about one screen refresh. Matching monitor refresh rates make the result easier to judge. The second window and LSFG combination still need verification with a real Xbox and Lossless Scaling; a higher FPS counter alone does not establish smoother motion.
 
 ### Why drop repeated frames
 
@@ -282,6 +299,8 @@ A keepalive issue ended the 594-second run. The fix passed a shorter integrated 
 - The log in `%APPDATA%\Jadebox\logs` records GPU and renderer process crashes (`process.gone`, `renderer.gone`), GPU info at start-up (`gpu.info`, `gpu.feature_status`), picture post-processing changes (`stream.post.*`, including `stream.post.dedupe` counts for the repeated-frame filter), and a picture sample every 5 seconds when something changes (`stream.picture`). `stream.black_video` means the console itself sent a black picture for 15 seconds. A normal `stream.picture` brightness while the screen looks black points to the display path, not the stream. Connection and controller events are logged too: WebRTC state (`stream.pc.state`), stream state (`stream.state`), the cause of a lost stream (`stream.loss`, for example `disconnected` or `main:...`), each automatic re-session (`stream.resession*`; the old session then ends with reason `replaced`), the controller list (`stream.controllers`) and the pad Jadebox sends to the console (`stream.pad.active`, `null` when none).
 
 ## Build from source
+
+The source package is named `jadebox`. The installed executable and data directory still use legacy Xenith identifiers for upgrade compatibility, as described above.
 
 Install Node.js 22 or later and Git. The CI workflow uses Node.js 24.
 
