@@ -324,6 +324,8 @@ Linux и macOS собираются в GitHub Actions: [.github/workflows/build.
 - `src/renderer/stream` — стрим-движок: WebRTC, статистика, профили, чёткость, ввод, переподключение.
 - `src/shared` — общий контракт между частями.
 
+Все документы проекта собраны в [вики](wiki/README.md).
+
 ## Участие в разработке
 
 При правках проекта обновляйте README. Файлы [AGENTS.md](AGENTS.md) и [CLAUDE.md](CLAUDE.md) должны быть одинаковыми. CI проверяет их содержимое командой `node tools/check-agent-docs.mjs`.

@@ -337,6 +337,8 @@ npx electron tools/ui-preview/capture.cjs --lang=en --check --sizes=1440x900,dec
 
 Jadebox uses Electron, Chromium WebRTC, and React. See the [stack decision](docs/adr/0001-stack-electron.md) for the reasoning.
 
+All project documents are listed in the [wiki](wiki/README.md).
+
 | Directory | Responsibility |
 |---|---|
 | `src/main` | Microsoft and Xbox Live sign-in, Remote Play and cloud session APIs, game catalogue, settings, history, and logs |
