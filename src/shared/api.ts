@@ -154,6 +154,7 @@ export interface StreamStats {
   frameWidth: number | null;
   frameHeight: number | null;
   fps: number | null;
+  gameFps: number | null;          // frames per second that differ from the previous one; null while the HUD is off
   kbps: number | null;
   rttMs: number | null;
   jitterMs: number | null;

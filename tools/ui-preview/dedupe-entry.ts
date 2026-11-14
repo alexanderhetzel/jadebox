@@ -1,4 +1,5 @@
 import { PostProcessor, type PostConfig } from '../../src/renderer/stream/postprocess';
+import { FrameDedupe } from '../../src/renderer/stream/dedupe';
 
 // Synthetic 60 fps stream: in "repeat" phases every content step is sent twice, the repeat with faint noise like an
 // encoder refinement. The moving object is 8 x 8 px and moves 2 px per step, the hardest case for a tile mean.
@@ -43,6 +44,7 @@ async function run() {
   const post = new PostProcessor(holder, video, { _video_format: '' }, () => {});
   const cfg: PostConfig = { sharpness: 0, fsr: false, brightness: 1, contrast: 1, saturation: 1, fit: 'contain', dedupe: false, bridge: false };
   post.apply(cfg); post.setReady();
+  const counter = new FrameDedupe(video, false);   // the HUD's game frame counter, independent of the filter
   await wait(500);
 
   const phases: Phase[] = [];
@@ -52,10 +54,10 @@ async function run() {
     post.apply({ ...cfg, dedupe });   // fresh mode: its 5 s stats log must not reset counters mid-phase
     await wait(700);
     const d = (post as any).dedupe;
-    if (d) d.stats = { frames: 0, drawn: 0, skipped: 0, maxSkippedMean: 0, minDrawnMean: null };
-    const start = Date.now(); const t0 = tick;
+    if (d) d.stats = { frames: 0, changed: 0, drawn: 0, skipped: 0, maxSkippedMean: 0, minDrawnMean: null };
+    const start = Date.now(); const t0 = tick; const c0 = counter.stats.changed;
     await wait(3000);
-    phases.push({ name, dedupe, repeat: rep, start, end: Date.now(), ticks: tick - t0, mode: post.mode, ...(d ? d.stats : { frames: 0, drawn: 0, skipped: 0, maxSkippedMean: 0, minDrawnMean: null }) } as Phase);
+    phases.push({ name, dedupe, repeat: rep, start, end: Date.now(), ticks: tick - t0, mode: post.mode, counted: counter.stats.changed - c0, ...(d ? d.stats : { frames: 0, drawn: 0, skipped: 0, maxSkippedMean: 0, minDrawnMean: null }) } as Phase);
   }
   window.__dedupe = { status: 'passed', phases };
 }

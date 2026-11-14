@@ -39,9 +39,10 @@ if (!process.versions.electron) {
         const sec = (p.end - p.start) / 1000;
         const rate = paints.filter(t => t >= p.start && t < p.end).length / sec;
         const want = p.dedupe && p.repeat ? [25, 35] : [52, 68];
-        const pass = rate >= want[0] && rate <= want[1] && (!p.dedupe || p.mode === 'dedupe');
+        const game = p.counted / sec, wantGame = p.repeat ? [25, 35] : [52, 68];
+        const pass = rate >= want[0] && rate <= want[1] && (!p.dedupe || p.mode === 'dedupe') && game >= wantGame[0] && game <= wantGame[1];
         ok &&= pass;
-        console.log(`${pass ? 'PASS' : 'FAIL'} ${p.name}: mode ${p.mode}, window repaints ${rate.toFixed(1)}/s (want ${want[0]}-${want[1]}); source ticks ${p.ticks}, filter frames ${p.frames}, drawn ${p.drawn}, skipped ${p.skipped}, max skipped mean ${p.maxSkippedMean.toFixed(2)}, min drawn mean ${p.minDrawnMean?.toFixed(2) ?? '-'}`);
+        console.log(`${pass ? 'PASS' : 'FAIL'} ${p.name}: mode ${p.mode}, window repaints ${rate.toFixed(1)}/s (want ${want[0]}-${want[1]}), game frames ${game.toFixed(1)}/s (want ${wantGame[0]}-${wantGame[1]});source ticks ${p.ticks}, filter frames ${p.frames}, drawn ${p.drawn}, skipped ${p.skipped}, max skipped mean ${p.maxSkippedMean.toFixed(2)}, min drawn mean ${p.minDrawnMean?.toFixed(2) ?? '-'}`);
       }
       app.exit(ok ? 0 : 1);
     } catch (e) { console.error(e); app.exit(1); }

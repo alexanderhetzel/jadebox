@@ -134,7 +134,7 @@ export class PostProcessor {
         this.dedupe = d;
         this.dedupeTimer = window.setInterval(() => {
           if (d.stats.frames) this.log('post.dedupe', d.stats);
-          d.stats = { frames: 0, drawn: 0, skipped: 0, maxSkippedMean: 0, minDrawnMean: null };
+          d.stats = { frames: 0, changed: 0, drawn: 0, skipped: 0, maxSkippedMean: 0, minDrawnMean: null };
         }, 5000);
       }
       this.log('post.mode', m);

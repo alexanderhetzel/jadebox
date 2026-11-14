@@ -12,7 +12,8 @@ export const GRID_W = 64, GRID_H = 36;
 /** The pass stores mean * this in an 8-bit channel to keep sub-1 precision. */
 const MEAN_SCALE = 8;
 
-export interface DedupeStats { frames: number; drawn: number; skipped: number; maxSkippedMean: number; minDrawnMean: number | null }
+/** changed: frames that differ from the last kept one, i.e. new game frames (the HUD's game frame rate). */
+export interface DedupeStats { frames: number; changed: number; drawn: number; skipped: number; maxSkippedMean: number; minDrawnMean: number | null }
 
 /** Pure decision, unit-tested: draw when the frame changed, or when too many frames were skipped in a row. */
 export function shouldDraw(maxTileMean: number, skippedInRow: number): boolean {
@@ -45,7 +46,7 @@ void main() { ivec2 p = ivec2(gl_FragCoord.xy); o = vec4(texelFetch(cur, ivec2(p
 
 export class FrameDedupe {
   readonly canvas = document.createElement('canvas');
-  stats: DedupeStats = { frames: 0, drawn: 0, skipped: 0, maxSkippedMean: 0, minDrawnMean: null };
+  stats: DedupeStats = { frames: 0, changed: 0, drawn: 0, skipped: 0, maxSkippedMean: 0, minDrawnMean: null };
   private gl: WebGL2RenderingContext;
   private diffProg: WebGLProgram;
   private blitProg: WebGLProgram;
@@ -58,7 +59,8 @@ export class FrameDedupe {
   private cb = 0;
   private stopped = false;
 
-  constructor(private video: HTMLVideoElement) {
+  /** present = false only counts frames (HUD game frame rate) and never draws to the canvas. */
+  constructor(private video: HTMLVideoElement, private present = true) {
     const gl = this.canvas.getContext('webgl2', { alpha: false, antialias: false, depth: false, preserveDrawingBuffer: true, desynchronized: true });
     if (!gl) throw new Error('webgl2 unavailable');
     this.gl = gl;
@@ -100,6 +102,7 @@ export class FrameDedupe {
     this.stats.frames++;
 
     const mean = this.hasPrev ? this.maxTileMean() : Infinity;
+    if (mean > CHANGED_MEAN) this.stats.changed++;
     if (!shouldDraw(mean, this.skippedInRow)) {
       this.skippedInRow++;
       this.stats.skipped++;
@@ -109,12 +112,14 @@ export class FrameDedupe {
     this.skippedInRow = 0;
     this.stats.drawn++;
     if (Number.isFinite(mean)) this.stats.minDrawnMean = Math.min(this.stats.minDrawnMean ?? mean, mean);
-    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-    gl.viewport(0, 0, w, h);
-    gl.useProgram(this.blitProg);
-    this.bindTex(this.blitProg, 'cur', 0, this.tex[0]);
-    gl.uniform2i(gl.getUniformLocation(this.blitProg, 'size'), w, h);
-    gl.drawArrays(gl.TRIANGLES, 0, 3);
+    if (this.present) {
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      gl.viewport(0, 0, w, h);
+      gl.useProgram(this.blitProg);
+      this.bindTex(this.blitProg, 'cur', 0, this.tex[0]);
+      gl.uniform2i(gl.getUniformLocation(this.blitProg, 'size'), w, h);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+    }
     this.tex = [this.tex[1], this.tex[0]];
     this.hasPrev = true;
   }

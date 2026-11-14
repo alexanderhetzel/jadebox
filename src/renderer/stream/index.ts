@@ -10,6 +10,7 @@ import { StatsSampler } from './stats';
 import { InputManager } from './input';
 import { AudioTap } from './audio';
 import { PostProcessor, type PostConfig } from './postprocess';
+import { FrameDedupe } from './dedupe';
 import { PictureWatch, videoLuma } from './picture';
 
 export { effectiveSettings } from './settings-map';
@@ -94,6 +95,8 @@ interface Live {
   ticks: number;
   pic: PictureWatch;
   picCtx: CanvasRenderingContext2D | null;
+  /** Counts new game frames while the HUD is on (the stream itself is 60 fps whatever the game renders). */
+  counter: { dedupe: FrameDedupe; changed: number; at: number } | null;
 }
 
 export class XenithStreamController implements StreamController {
@@ -305,7 +308,7 @@ export class XenithStreamController implements StreamController {
 
     const live: Live = {
       gen, sessionId, player, pc, holder, sampler: null as any, input: null as any, post: null, audioTap: null, audioEl: null,
-      video: null, timers: [], connected: false, firstFrame: null, firstFrameSent: false, inputStarted: false, lostTimer: null, answerSdp: null, connectedAt: 0, ticks: 0, pic: new PictureWatch(), picCtx: null,
+      video: null, timers: [], connected: false, firstFrame: null, firstFrameSent: false, inputStarted: false, lostTimer: null, answerSdp: null, connectedAt: 0, ticks: 0, pic: new PictureWatch(), picCtx: null, counter: null,
     };
     live.sampler = new StatsSampler(pc, () => live.answerSdp);
     this.live = live; // before install(): the first controllers scan must reach listeners
@@ -401,6 +404,7 @@ export class XenithStreamController implements StreamController {
     try {
       const r = await live.sampler.sample();
       if (!r || this.live !== live) return;
+      r.stats.gameFps = this.gameFps(live);
       this.emit('stats', r.stats);
       this.debug('stats', { ...r.stats, ...r.extra, post: live.post?.mode ?? null });
       try { window.xenith.sessionReport(live.sessionId, r.stats); } catch { /* ignore */ }
@@ -465,12 +469,28 @@ export class XenithStreamController implements StreamController {
     }
   }
 
+  /** New game frames per second since the last tick, or null while the HUD is off or counting just started. */
+  private gameFps(live: Live): number | null {
+    const want = !!live.firstFrame && !!live.video && this.settings?.video.hud !== 'off';
+    if (!want) { live.counter?.dedupe.stop(); live.counter = null; return null; }
+    const now = performance.now();
+    if (!live.counter) {
+      try { live.counter = { dedupe: new FrameDedupe(live.video!, false), changed: 0, at: now }; } catch (e) { this.debug('counter.err', String(e)); }
+      return null;
+    }
+    const c = live.counter, changed = c.dedupe.stats.changed, dt = (now - c.at) / 1000;
+    const fps = dt > 0 ? Math.round((changed - c.changed) / dt) : null;
+    c.changed = changed; c.at = now;
+    return fps;
+  }
+
   private teardown() {
     const live = this.live;
     if (!live) return;
     this.live = null;
     for (const t of live.timers) clearInterval(t);
     if (live.lostTimer !== null) clearTimeout(live.lostTimer);
+    live.counter?.dedupe.stop();
     try { live.post?.dispose(); } catch { /* ignore */ }
     try { live.audioTap?.close(); } catch { /* ignore */ }
     try { live.input.dispose(); } catch { /* ignore */ }
