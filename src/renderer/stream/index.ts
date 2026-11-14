@@ -97,6 +97,8 @@ interface Live {
   picCtx: CanvasRenderingContext2D | null;
   /** Counts new game frames while the HUD is on (the stream itself is 60 fps whatever the game renders). */
   counter: { dedupe: FrameDedupe; changed: number; at: number } | null;
+  /** Sums for the 10 s 'stream.frames' log line. */
+  frameLog: { ticks: number; fps: number; nFps: number; game: number; nGame: number };
 }
 
 export class XenithStreamController implements StreamController {
@@ -308,7 +310,7 @@ export class XenithStreamController implements StreamController {
 
     const live: Live = {
       gen, sessionId, player, pc, holder, sampler: null as any, input: null as any, post: null, audioTap: null, audioEl: null,
-      video: null, timers: [], connected: false, firstFrame: null, firstFrameSent: false, inputStarted: false, lostTimer: null, answerSdp: null, connectedAt: 0, ticks: 0, pic: new PictureWatch(), picCtx: null, counter: null,
+      video: null, timers: [], connected: false, firstFrame: null, firstFrameSent: false, inputStarted: false, lostTimer: null, answerSdp: null, connectedAt: 0, ticks: 0, pic: new PictureWatch(), picCtx: null, counter: null, frameLog: { ticks: 0, fps: 0, nFps: 0, game: 0, nGame: 0 },
     };
     live.sampler = new StatsSampler(pc, () => live.answerSdp);
     this.live = live; // before install(): the first controllers scan must reach listeners
@@ -405,6 +407,7 @@ export class XenithStreamController implements StreamController {
       const r = await live.sampler.sample();
       if (!r || this.live !== live) return;
       r.stats.gameFps = this.gameFps(live);
+      this.logFrames(live, r.stats);
       this.emit('stats', r.stats);
       this.debug('stats', { ...r.stats, ...r.extra, post: live.post?.mode ?? null });
       try { window.xenith.sessionReport(live.sessionId, r.stats); } catch { /* ignore */ }
@@ -467,6 +470,16 @@ export class XenithStreamController implements StreamController {
       this.debug('iceRestart.err', { ms: Math.round(performance.now() - t0), err: String((e as any)?.message || e) });
       return false;
     }
+  }
+
+  /** Every ~10 s writes the average stream and game frame rates to the app log (gameFps is null while the HUD is off). */
+  private logFrames(live: Live, s: StreamStats) {
+    const a = live.frameLog;
+    if (s.fps != null) { a.fps += s.fps; a.nFps++; }
+    if (s.gameFps != null) { a.game += s.gameFps; a.nGame++; }
+    if (++a.ticks < 10) return;
+    if (a.nFps) this.diag('frames', { fps: Math.round(a.fps / a.nFps), gameFps: a.nGame ? Math.round(a.game / a.nGame) : null, w: s.frameWidth, h: s.frameHeight, post: live.post?.mode ?? null });
+    live.frameLog = { ticks: 0, fps: 0, nFps: 0, game: 0, nGame: 0 };
   }
 
   /** New game frames per second since the last tick, or null while the HUD is off or counting just started. */

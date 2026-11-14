@@ -36,7 +36,7 @@ Cloud gaming needs a Game Pass plan that includes it, and it works only in count
 
 The overlay shows what actually arrives: frame resolution, bitrate, network round-trip time, video buffer, decode time, and packet loss. If the console sends 1080p, Jadebox shows 1080p even when you asked for 1440p. Use it to see whether lag comes from the network or from your device.
 
-The stream itself always runs at about 60 frames per second, even when the game renders 30. "Game frames" counts only the frames that differ from the previous one, which is how many frames the game actually produces. A still picture, such as a paused menu, shows fewer game frames than the game renders, because identical frames are not counted. The counter runs only while the overlay is on: it compares every frame on the GPU.
+The stream itself always runs at about 60 frames per second, even when the game renders 30. "Game frames" counts only the frames that differ from the previous one, which is how many frames the game actually produces. A still picture, such as a paused menu, shows fewer game frames than the game renders, because identical frames are not counted. The counter runs only while the overlay is on: it compares every frame on the GPU. Every 10 seconds the app log gets a `stream.frames` line with the average stream and game frame rates, the resolution and the picture mode; its game frame rate is empty while the overlay is off.
 
 ### Profiles and picture controls
 
