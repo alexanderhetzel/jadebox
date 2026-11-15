@@ -42,22 +42,22 @@ async function run() {
   video.srcObject = stream;
   await video.play();
   const post = new PostProcessor(holder, video, { _video_format: '' }, () => {});
-  const cfg: PostConfig = { sharpness: 0, fsr: false, brightness: 1, contrast: 1, saturation: 1, fit: 'contain', dedupe: false, bridge: false };
+  const cfg: PostConfig = { sharpness: 0, fsr: false, brightness: 1, contrast: 1, saturation: 1, fit: 'contain', dedupe: false, cap: 0, bridge: false };
   post.apply(cfg); post.setReady();
   const counter = new FrameDedupe(video, false);   // the HUD's game frame counter, independent of the filter
   await wait(500);
 
   const phases: Phase[] = [];
-  for (const [name, dedupe, rep] of [['off, 30 in 60', false, true], ['on, 30 in 60', true, true], ['on, 60 unique', true, false], ['off, 60 unique', false, false]] as const) {
+  for (const [name, dedupe, rep, cap] of [['off, 30 in 60', false, true, 0], ['on, 30 in 60', true, true, 0], ['on, 60 unique', true, false, 0], ['off, 60 unique', false, false, 0], ['cap 30, 60 unique', false, false, 30], ['cap 24, 60 unique', true, false, 24]] as const) {
     repeat = rep;
     post.apply({ ...cfg, dedupe: false });
-    post.apply({ ...cfg, dedupe });   // fresh mode: its 5 s stats log must not reset counters mid-phase
+    post.apply({ ...cfg, dedupe, cap });   // fresh mode: its 5 s stats log must not reset counters mid-phase
     await wait(700);
     const d = (post as any).dedupe;
     if (d) d.stats = { frames: 0, changed: 0, drawn: 0, skipped: 0, maxSkippedMean: 0, minDrawnMean: null };
     const start = Date.now(); const t0 = tick; const c0 = counter.stats.changed;
     await wait(3000);
-    phases.push({ name, dedupe, repeat: rep, start, end: Date.now(), ticks: tick - t0, mode: post.mode, counted: counter.stats.changed - c0, ...(d ? d.stats : { frames: 0, drawn: 0, skipped: 0, maxSkippedMean: 0, minDrawnMean: null }) } as Phase);
+    phases.push({ name, dedupe, repeat: rep, cap, start, end: Date.now(), ticks: tick - t0, mode: post.mode, counted: counter.stats.changed - c0, ...(d ? d.stats : { frames: 0, drawn: 0, skipped: 0, maxSkippedMean: 0, minDrawnMean: null }) } as Phase);
   }
   window.__dedupe = { status: 'passed', phases };
 }

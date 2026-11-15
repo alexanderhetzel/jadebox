@@ -12,6 +12,7 @@ export interface PostConfig {
   brightness: number; contrast: number; saturation: number;
   fit: VideoFit;
   dedupe: boolean;     // draw only frames that differ, for frame generation over the window
+  cap: number;         // show at most this many frames per second (0 = off), for a visible frame generation test
   bridge: boolean;
 }
 
@@ -81,6 +82,7 @@ export class PostProcessor {
     if (!c) return 'none';
     if (c.bridge) return 'hidden';
     if (!this.ready) return 'none';
+    if (c.cap) return 'dedupe';
     if (c.fsr && this.upscaling()) return 'fsr';
     if (c.sharpness > 0) return 'cas';
     if (c.dedupe) return 'dedupe';
@@ -102,7 +104,7 @@ export class PostProcessor {
     else if (m === 'cas') this.cas?.updateOptions({ sharpness: casFactor(c.sharpness) } as any, true);
     else if (m === 'fsr') this.player._videoComponent?.setRcasStops(rcasStops(c.sharpness));
     if (this.cas) this.cas.getCanvas().style.objectFit = c.fit;
-    if (this.dedupe) this.dedupe.canvas.style.objectFit = c.fit;
+    if (this.dedupe) { this.dedupe.canvas.style.objectFit = c.fit; this.dedupe.cap = c.cap; }
   }
 
   private setupMode(m: PostMode, c: PostConfig) {

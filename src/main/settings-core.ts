@@ -19,6 +19,7 @@ const SPEC: Record<string, Spec> = {
   'video.saturation': { min: 0.5, max: 1.5 },
   'video.fit': { enum: ['contain', 'cover', 'fill'] },
   'video.cloudFits': { record: true, enum: ['contain', 'cover', 'fill'], keyPattern: /^(?!\.{1,2}$)(?!__proto__$|constructor$|prototype$)[A-Za-z0-9._-]{1,64}$/, maxEntries: MAX_CLOUD_FITS },
+  'video.frameCap': { enum: ['off', '30', '24'] },
   'video.hud': { enum: ['off', 'compact', 'full'] },
   'video.hudCorner': { enum: ['top-left', 'top-right', 'bottom-left', 'bottom-right'] },
   'audio.outputDeviceId': { maxLen: 512 },

@@ -20,6 +20,9 @@ export function shouldDraw(maxTileMean: number, skippedInRow: number): boolean {
   return maxTileMean > CHANGED_MEAN || skippedInRow >= MAX_SKIPPED;
 }
 
+/** The Xbox stream rate the frame cap divides. */
+export const STREAM_FPS = 60;
+
 const VS = `#version 300 es
 void main() { vec2 p = vec2(float((gl_VertexID << 1) & 2), float(gl_VertexID & 2)); gl_Position = vec4(p * 2.0 - 1.0, 0.0, 1.0); }`;
 
@@ -47,6 +50,10 @@ void main() { ivec2 p = ivec2(gl_FragCoord.xy); o = vec4(texelFetch(cur, ivec2(p
 export class FrameDedupe {
   readonly canvas = document.createElement('canvas');
   stats: DedupeStats = { frames: 0, changed: 0, drawn: 0, skipped: 0, maxSkippedMean: 0, minDrawnMean: null };
+  /** Frames per second to show (0 = off), replacing the change test: 30 keeps every 2nd frame, 24 a 3-2 pattern.
+   *  shortcut: counts stream frames as 1/60 s, so a dropped stream frame lowers the shown rate; time it if that matters. */
+  cap = 0;
+  private capAcc = 0;
   private gl: WebGL2RenderingContext;
   private diffProg: WebGLProgram;
   private blitProg: WebGLProgram;
@@ -103,7 +110,13 @@ export class FrameDedupe {
 
     const mean = this.hasPrev ? this.maxTileMean() : Infinity;
     if (mean > CHANGED_MEAN) this.stats.changed++;
-    if (!shouldDraw(mean, this.skippedInRow)) {
+    let draw = shouldDraw(mean, this.skippedInRow);
+    if (this.cap) {
+      this.capAcc += this.cap;
+      draw = this.capAcc >= STREAM_FPS;
+      if (draw) this.capAcc -= STREAM_FPS;
+    }
+    if (!draw) {
       this.skippedInRow++;
       this.stats.skipped++;
       this.stats.maxSkippedMean = Math.max(this.stats.maxSkippedMean, mean);

@@ -543,7 +543,7 @@ export class XenithStreamController implements StreamController {
 
   private postConfig(): PostConfig {
     const s = this.settings!, e = this.eff!;
-    return { sharpness: e.sharpness, fsr: e.fsr, brightness: s.video.brightness, contrast: s.video.contrast, saturation: s.video.saturation, fit: e.fit, dedupe: s.video.dropRepeatedFrames, bridge: s.haptics.bridgeMode };
+    return { sharpness: e.sharpness, fsr: e.fsr, brightness: s.video.brightness, contrast: s.video.contrast, saturation: s.video.saturation, fit: e.fit, dedupe: s.video.dropRepeatedFrames, cap: Number(s.video.frameCap) || 0, bridge: s.haptics.bridgeMode };
   }
 
   private applyAudio(live: Live) {

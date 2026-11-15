@@ -219,6 +219,17 @@ With "Drop repeated frames" on, Jadebox compares each new frame with the last on
 
 A synthetic check passed. A 30-in-60 test source made the window repaint 31 times a second instead of 62, and a 60 fps source with an 8-pixel object moving 2 pixels a frame still repainted 62 times a second. The filter has not run on a real Xbox stream yet. Compression noise on real repeated frames may be higher than in the test. Check the `stream.post.dedupe` numbers with a 30 fps game such as Red Dead Redemption 2 or GTA V in Fidelity mode.
 
+### Test frame generation at 30 or 24 fps
+
+A 60 fps game with frame generation looks almost the same as without it, so the difference is hard to see. Settings > Video > "Limit frames" makes Jadebox show only 30 or 24 of the 60 stream frames. At 24 fps the motion stutters visibly, and Lossless Scaling x4 or x5 should bring it back to smooth. Switch frame generation on and off to compare.
+
+- 30 shows every second frame. 24 shows frames in a 3-2 pattern, like film on a 60 Hz screen.
+- Sharpening and FSR are off while the limit is on.
+- The count assumes a 60 fps stream. When the stream drops frames, fewer frames are shown too.
+- "Frames on screen" in the overlay should read about 30 or 24 without frame generation and the Lossless Scaling output rate with it.
+
+A synthetic check passed: with a 60 fps source the window repainted 31 times a second at 30 and 25 times at 24 (`node tools/ui-preview/check-dedupe.mjs`). Not yet tried on a real Xbox stream.
+
 ## Launch arguments
 
 | Argument | Effect |

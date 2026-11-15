@@ -1,5 +1,5 @@
-// Proves the repeated-frame filter: with a 30-in-60 source the window must repaint about 30 times a second, with
-// 60 unique frames it must still repaint about 60. Repaints are counted from Electron offscreen 'paint' events.
+// Proves the repeated-frame filter and the frame cap: with a 30-in-60 source the window must repaint about 30 times a second, with
+// 60 unique frames it must still repaint about 60, and a 30 or 24 cap must repaint at that rate. Repaints are counted from Electron offscreen 'paint' events.
 import { build } from 'esbuild';
 import { cpSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
@@ -38,9 +38,9 @@ if (!process.versions.electron) {
       for (const p of res.phases) {
         const sec = (p.end - p.start) / 1000;
         const rate = paints.filter(t => t >= p.start && t < p.end).length / sec;
-        const want = p.dedupe && p.repeat ? [25, 35] : [52, 68];
+        const want = p.cap ? [p.cap - 4, p.cap + 2] : p.dedupe && p.repeat ? [25, 35] : [52, 68];
         const game = p.counted / sec, wantGame = p.repeat ? [25, 35] : [52, 68];
-        const pass = rate >= want[0] && rate <= want[1] && (!p.dedupe || p.mode === 'dedupe') && game >= wantGame[0] && game <= wantGame[1];
+        const pass = rate >= want[0] && rate <= want[1] && (!(p.dedupe || p.cap) || p.mode === 'dedupe') && game >= wantGame[0] && game <= wantGame[1];
         ok &&= pass;
         console.log(`${pass ? 'PASS' : 'FAIL'} ${p.name}: mode ${p.mode}, window repaints ${rate.toFixed(1)}/s (want ${want[0]}-${want[1]}), game frames ${game.toFixed(1)}/s (want ${wantGame[0]}-${wantGame[1]});source ticks ${p.ticks}, filter frames ${p.frames}, drawn ${p.drawn}, skipped ${p.skipped}, max skipped mean ${p.maxSkippedMean.toFixed(2)}, min drawn mean ${p.minDrawnMean?.toFixed(2) ?? '-'}`);
       }
