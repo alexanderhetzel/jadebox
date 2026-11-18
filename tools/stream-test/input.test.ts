@@ -1,5 +1,6 @@
 // Offline test of InputManager (combos, HUD tap, overlay pause/resume gate, rumble parsing) with a fake Gamepad API.
 // Run: node tools/stream-test/run-input-test.mjs
+import { dispatchAction, pushLayer } from '../../src/renderer/nav/engine';
 import { InputManager, buildMapping, describeGamepad } from '../../src/renderer/stream/input';
 
 let clock = 0;
@@ -63,6 +64,12 @@ const ok = (c: boolean, m: string) => { console.log((c ? 'PASS ' : 'FAIL ') + m)
   const d = describeGamepad({ id: '37d7-2401-Flydigi APEX 6', index: 1 } as any); ok(d.isFlydigi && d.name === 'Flydigi APEX 6', 'flydigi linux id');
   const v = describeGamepad({ id: 'Xbox 360 Controller (XInput STANDARD GAMEPAD)', index: 2 } as any); ok(v.connection === 'unknown' && v.name.startsWith('Xbox 360'), 'xinput id');
   im.dispose();
+  const removeScreen = pushLayer({ current: { a: () => { throw Error('A escaped the overlay'); } } }, null, false);
+  const removeOverlay = pushLayer({ current: {} }, null, true);
+  if (dispatchAction('a')) throw Error('Overlay consumed A before the focused item could activate');
+  removeOverlay();
+  removeScreen();
+
   console.log(fails ? `${fails} FAILED` : 'ALL PASS');
   process.exit(fails ? 1 : 0);
 })();

@@ -50,7 +50,7 @@ Jadebox has no built-in frame generation. On Windows you can run Lossless Scalin
 
 ### Gamepad first
 
-The whole app works with a gamepad, no mouse needed. During a game, tap View + Menu together to press the Xbox button, or hold them to open the Jadebox menu. You can set stick dead zones, rumble, and trigger rumble. Mouse and keyboard work in cloud games that support them. With "Mouse and keyboard" on, clicking the picture captures the cursor in a cloud game. Esc releases it, and Alt+Tab and the Win key keep working. Console Remote Play never captures the cursor.
+The whole app works with a gamepad, no mouse needed. During a game, tap View + Menu together to press the Xbox button, or hold them to open the Jadebox menu. Use the D-pad to highlight an item and A to activate it. You can set stick dead zones, rumble, and trigger rumble. Mouse and keyboard work in cloud games that support them. With "Mouse and keyboard" on, clicking the picture captures the cursor in a cloud game. Esc releases it, and Alt+Tab and the Win key keep working. Console Remote Play never captures the cursor.
 
 ### Steam and Steam Deck
 
@@ -150,6 +150,8 @@ Tokens use the operating system's secure storage on Windows and macOS. SteamOS a
 Outside a stream, the bottom of the left panel has "Full screen" (or "Window" while in full screen) and "Quit". They work with the mouse and the gamepad.
 
 ## Frame generation with Lossless Scaling
+
+**Steam Deck:** Keep Lossless Scaling frame generation (LSFG-VK) disabled for Xenith. During an Xbox Remote Play test on Steam Deck, the image warped and flickered with LSFG-VK 2.0.0 at ×2.
 
 [Lossless Scaling](https://store.steampowered.com/app/993090/Lossless_Scaling/) is a paid Windows app on Steam. Its LSFG frame generation draws extra frames between the ones it captures from a window. Many console games run at 30 fps. With LSFG x2 over Jadebox you would see 60 fps on the PC screen.
 

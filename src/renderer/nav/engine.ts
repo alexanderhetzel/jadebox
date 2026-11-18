@@ -21,7 +21,7 @@ export function dispatchAction(a: PadAction): boolean {
   for (let i = layers.length - 1; i >= 0; i--) {
     const h = layers[i].handlers.current[a];
     if (h && h() !== false) return true;
-    if (layers[i].modal) return a === 'b' ? false : true; // modal swallows everything else
+    if (layers[i].modal) return a !== 'a' && a !== 'b'; // A falls back to activation within the modal scope.
   }
   return false;
 }
