@@ -180,7 +180,7 @@ export const en: Strings = {
       sharpness: 'Sharpness', sharpnessDesc: 'Sharpens the picture. The stream resolution does not change.',
       fsr: 'FSR upscaling', fsrDesc: 'Upscales cleanly when the window is larger than the stream, for example 1080p on a 1440p screen.',
       dropRepeated: 'Drop repeated frames', dropRepeatedDesc: 'For Lossless Scaling over Jadebox. A 30 fps game arrives in a 60 fps stream with every frame twice. Jadebox shows only new frames, so frame generation sees real motion. Works when sharpness is 0 and FSR is off.',
-      frameCap: 'Limit frames', frameCapDesc: 'For testing frame generation by eye. Jadebox shows only 30 or 24 of the 60 stream frames, so the difference with and without frame generation is obvious. Sharpening and FSR are off while the limit is on.',
+      frameCap: 'Limit frames', frameCapDesc: 'For testing frame generation by eye. Jadebox uses video timestamps to limit output to 30 or 24 fps. Sharpening and FSR are off while the limit is on.',
       frameCapOpts: { off: 'Off', '30': '30 fps', '24': '24 fps' } as Record<string, string>,
       picture: 'Picture', brightness: 'Brightness', contrast: 'Contrast', saturation: 'Saturation', pictureDesc: '100 % is what the console sends',
       fit: 'Picture size', fitDesc: 'How the stream fits the window when aspect ratios differ.',

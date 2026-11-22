@@ -20,8 +20,10 @@ export function shouldDraw(maxTileMean: number, skippedInRow: number): boolean {
   return maxTileMean > CHANGED_MEAN || skippedInRow >= MAX_SKIPPED;
 }
 
-/** The Xbox stream rate the frame cap divides. */
-export const STREAM_FPS = 60;
+// A seek or a long interruption starts a fresh presentation grid.
+const CAP_DISCONTINUITY_SECONDS = 1;
+// Allow a microsecond of rounding in callback media timestamps at slot boundaries.
+const TIMESTAMP_EPSILON = 0.000001;
 
 const VS = `#version 300 es
 void main() { vec2 p = vec2(float((gl_VertexID << 1) & 2), float(gl_VertexID & 2)); gl_Position = vec4(p * 2.0 - 1.0, 0.0, 1.0); }`;
@@ -50,10 +52,17 @@ void main() { ivec2 p = ivec2(gl_FragCoord.xy); o = vec4(texelFetch(cur, ivec2(p
 export class FrameDedupe {
   readonly canvas = document.createElement('canvas');
   stats: DedupeStats = { frames: 0, changed: 0, drawn: 0, skipped: 0, maxSkippedMean: 0, minDrawnMean: null };
-  /** Frames per second to show (0 = off), replacing the change test: 30 keeps every 2nd frame, 24 a 3-2 pattern.
-   *  shortcut: counts stream frames as 1/60 s, so a dropped stream frame lowers the shown rate; time it if that matters. */
-  cap = 0;
-  private capAcc = 0;
+  private fps = 0;
+  private anchor = 0;
+  private lastMediaTime: number | null = null;
+  private lastSlot = -1;
+
+  get cap() { return this.fps; }
+  set cap(fps: number) {
+    if (this.fps !== fps) this.lastMediaTime = null;
+    this.fps = fps;
+  }
+
   private gl: WebGL2RenderingContext;
   private diffProg: WebGLProgram;
   private blitProg: WebGLProgram;
@@ -89,13 +98,26 @@ export class FrameDedupe {
     this.gl.getExtension('WEBGL_lose_context')?.loseContext();
   }
 
-  private onFrame = () => {
+  private onFrame = (_now: number, metadata: VideoFrameCallbackMetadata) => {
     if (this.stopped) return;
     this.cb = this.video.requestVideoFrameCallback(this.onFrame);
-    try { this.frame(); } catch { /* context lost: the owner tears down on webglcontextlost */ }
+    try { this.frame(metadata.mediaTime); } catch { /* context lost: the owner tears down on webglcontextlost */ }
   };
 
-  private frame() {
+  private capAllowsFrame(mediaTime: number): boolean {
+    if (this.lastMediaTime === null || mediaTime < this.lastMediaTime ||
+        mediaTime - this.lastMediaTime >= CAP_DISCONTINUITY_SECONDS) {
+      this.anchor = mediaTime;
+      this.lastSlot = -1;
+    }
+    this.lastMediaTime = mediaTime;
+    const slot = Math.floor((mediaTime - this.anchor + TIMESTAMP_EPSILON) * this.fps);
+    if (slot === this.lastSlot) return false;
+    this.lastSlot = slot;
+    return true;
+  }
+
+  private frame(mediaTime: number) {
     const gl = this.gl, v = this.video;
     const w = v.videoWidth, h = v.videoHeight;
     if (!w || !h) return;
@@ -103,28 +125,29 @@ export class FrameDedupe {
       this.w = this.canvas.width = w; this.h = this.canvas.height = h;
       for (const t of this.tex) { gl.bindTexture(gl.TEXTURE_2D, t); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null); }
       this.hasPrev = false;
+      this.lastMediaTime = null;
+    }
+    this.stats.frames++;
+    if (this.fps && !this.capAllowsFrame(mediaTime)) {
+      this.stats.skipped++;
+      return;
     }
     gl.bindTexture(gl.TEXTURE_2D, this.tex[0]);
     gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, gl.RGBA, gl.UNSIGNED_BYTE, v);
-    this.stats.frames++;
 
-    const mean = this.hasPrev ? this.maxTileMean() : Infinity;
-    if (mean > CHANGED_MEAN) this.stats.changed++;
-    let draw = shouldDraw(mean, this.skippedInRow);
-    if (this.cap) {
-      this.capAcc += this.cap;
-      draw = this.capAcc >= STREAM_FPS;
-      if (draw) this.capAcc -= STREAM_FPS;
-    }
-    if (!draw) {
-      this.skippedInRow++;
-      this.stats.skipped++;
-      this.stats.maxSkippedMean = Math.max(this.stats.maxSkippedMean, mean);
-      return;
+    if (!this.fps) {
+      const mean = this.hasPrev ? this.maxTileMean() : Infinity;
+      if (mean > CHANGED_MEAN) this.stats.changed++;
+      if (!shouldDraw(mean, this.skippedInRow)) {
+        this.skippedInRow++;
+        this.stats.skipped++;
+        this.stats.maxSkippedMean = Math.max(this.stats.maxSkippedMean, mean);
+        return;
+      }
+      if (Number.isFinite(mean)) this.stats.minDrawnMean = Math.min(this.stats.minDrawnMean ?? mean, mean);
     }
     this.skippedInRow = 0;
     this.stats.drawn++;
-    if (Number.isFinite(mean)) this.stats.minDrawnMean = Math.min(this.stats.minDrawnMean ?? mean, mean);
     if (this.present) {
       gl.bindFramebuffer(gl.FRAMEBUFFER, null);
       gl.viewport(0, 0, w, h);
